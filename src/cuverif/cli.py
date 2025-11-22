@@ -10,7 +10,8 @@ import os
 import numpy as np
 
 # Add src to path if running directly
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+# __file__ is src/cuverif/cli.py -> dirname is src/cuverif -> .. is src
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import cuverif.core as cv
 from cuverif.faults import FaultCampaign
