@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cuverif"
+version = "0.1.0"
+description = "GPU-Accelerated DFX Logic Simulator"
+authors = [
+  { name="Aditya", email="aditya@example.com" },
+]
+dependencies = [
+    "numpy",
+    "numba",
+]
+requires-python = ">=3.8"
+
+[project.scripts]
+cuverif = "cuverif.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
