@@ -21,9 +21,10 @@ class Monitor:
         """
         self.time.append(self.cycle)
         for k, tensor in self.signals.items():
-            # Fetch both V and S arrays from GPU
-            v_val = tensor.v_data.copy_to_host()[self.instance_id]
-            s_val = tensor.s_data.copy_to_host()[self.instance_id]
+            # Fetch both V and S arrays (Backend Agnostic)
+            v_arr, s_arr = tensor.cpu()
+            v_val = v_arr[self.instance_id]
+            s_val = s_arr[self.instance_id]
             
             # Encoding for plotting:
             # If Strength is 0 (X or Z), map to 0.5 (middle line)

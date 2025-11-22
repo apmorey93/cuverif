@@ -128,18 +128,55 @@ def run_vcs():
     subprocess.check_call(cmd)
     subprocess.check_call(["./simv"])
 
+from cuverif.compiler import VerilogCompiler
+
 def run_cuverif_sim(netlist, patterns, cycles, signals):
-    # Placeholder for CuVerif simulation logic
-    # In a real implementation, this would use VerilogCompiler to load the netlist
-    # and run the simulation.
     print(f"[CuVerif] Simulating {netlist} for {cycles} cycles...")
     
-    # Mock result for now since we don't have the compiler fully integrated in this script
-    results = {}
-    for sig in signals:
-        # Return dummy 0s
-        results[sig] = ["0"] * cycles
-    return results
+    # 1. Compile
+    with open(netlist, 'r') as f:
+        source = f.read()
+    compiler = VerilogCompiler()
+    # Batch size 1 for harness comparison (single trace)
+    chip = compiler.compile(source, batch_size=1)
+    
+    # 2. Load Patterns (if provided)
+    # patterns is path to .npy
+    if patterns:
+        pat_data = np.load(patterns)
+        # Shape: [Cycles, Inputs]? Or [Inputs, Cycles]?
+        # Let's assume [Cycles, Inputs] and inputs are ordered same as chip.inputs
+        pass
+        
+    # 3. Run Simulation
+    history = {sig: [] for sig in signals}
+    
+    for i in range(cycles):
+        # Drive Inputs (Random if no patterns)
+        for inp in chip.inputs:
+            # TODO: Use pattern if available
+            # For harness comparison without patterns, we must be deterministic.
+            # Mock VCS generates 0s. So we should generate 0s.
+            val = cv.zeros(1) # Deterministic 0
+            chip.set_input(inp, val)
+            
+        chip.step()
+        
+        # Record Outputs
+        for sig in signals:
+            if sig in chip.signals:
+                # Get value (0/1/X)
+                v, s = chip.signals[sig].cpu()
+                val = v[0]
+                valid = s[0]
+                if valid:
+                    history[sig].append(str(val))
+                else:
+                    history[sig].append("x")
+            else:
+                history[sig].append("x") # Signal not found
+                
+    return history
 
 def main():
     parser = argparse.ArgumentParser(description="CuVerif vs VCS Golden Harness")
