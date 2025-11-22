@@ -34,27 +34,94 @@ def k_not(a, out, n):
 
 @cuda.jit
 def k_and_4state(a_v, a_s, b_v, b_s, out_v, out_s, n):
+    """
+    4-State AND with correct controlling value semantics.
+    
+    Truth Table:
+    - 0 & X = 0 (0 is controlling value)
+    - 1 & 1 = 1
+    - Any & X = X (if no controlling value)
+    
+    NOTE: Contains branches which cause warp divergence.
+    Correctness over performance for now.
+    """
     idx = cuda.grid(1)
     if idx < n:
-        # 4-State AND Logic (V/S encoding)
-        out_v[idx] = a_v[idx] & b_v[idx]
-        out_s[idx] = a_s[idx] & b_s[idx]
+        # Check for controlling 0: (v=0, s=1)
+        a_is_zero = (a_v[idx] == 0) and (a_s[idx] == 1)
+        b_is_zero = (b_v[idx] == 0) and (b_s[idx] == 1)
+        
+        if a_is_zero or b_is_zero:
+            # 0 dominates - output is 0
+            out_v[idx] = 0
+            out_s[idx] = 1
+        elif (a_s[idx] == 1) and (b_s[idx] == 1):
+            # Both valid (not X/Z) - normal AND
+            out_v[idx] = a_v[idx] & b_v[idx]
+            out_s[idx] = 1
+        else:
+            # At least one is X/Z - output is X
+            out_v[idx] = 0
+            out_s[idx] = 0
+
 
 @cuda.jit
 def k_or_4state(a_v, a_s, b_v, b_s, out_v, out_s, n):
+    """
+    4-State OR with correct controlling value semantics.
+    
+    Truth Table:
+    - 1 | X = 1 (1 is controlling value)
+    - 0 | 0 = 0
+    - Any | X = X (if no controlling value)
+    
+    NOTE: Contains branches which cause warp divergence.
+    Correctness over performance for now.
+    """
     idx = cuda.grid(1)
     if idx < n:
-        # 4-State OR Logic (V/S encoding)
-        out_v[idx] = a_v[idx] | b_v[idx]
-        out_s[idx] = a_s[idx] & b_s[idx]
+        # Check for controlling 1: (v=1, s=1)
+        a_is_one = (a_v[idx] == 1) and (a_s[idx] == 1)
+        b_is_one = (b_v[idx] == 1) and (b_s[idx] == 1)
+        
+        if a_is_one or b_is_one:
+            # 1 dominates - output is 1
+            out_v[idx] = 1
+            out_s[idx] = 1
+        elif (a_s[idx] == 1) and (b_s[idx] == 1):
+            # Both valid (not X/Z) - normal OR
+            out_v[idx] = a_v[idx] | b_v[idx]
+            out_s[idx] = 1
+        else:
+            # At least one is X/Z - output is X
+            out_v[idx] = 0
+            out_s[idx] = 0
+
 
 @cuda.jit
 def k_not_4state(a_v, a_s, out_v, out_s, n):
+    """
+    4-State NOT with X-propagation.
+    
+    Truth Table:
+    - ~0 = 1
+    - ~1 = 0
+    - ~X = X
+    - ~Z = X
+    
+    NOTE: Uses XOR for inversion, not bitwise complement.
+    """
     idx = cuda.grid(1)
     if idx < n:
-        # 4-State NOT Logic
-        out_v[idx] = ~a_v[idx]
-        out_s[idx] = a_s[idx]
+        # If input is valid (s=1), invert value bit
+        # Otherwise output is X
+        if a_s[idx] == 1:
+            out_v[idx] = a_v[idx] ^ 1  # XOR to flip 0<->1
+            out_s[idx] = 1
+        else:
+            out_v[idx] = 0
+            out_s[idx] = 0
+
 
 @cuda.jit
 def k_xor_4state(a_v, a_s, b_v, b_s, out_v, out_s, n):

@@ -33,9 +33,19 @@ STATES = ["0", "1", "X", "Z"]
 V_MAP = {"0": 0, "1": 1, "X": 0, "Z": 1}
 S_MAP = {"0": 1, "1": 1, "X": 0, "Z": 0}
 
-@pytest.fixture
-def backend():
-    return CpuBackend()
+@pytest.fixture(params=["cpu", "cuda"])
+def backend(request):
+    """Test both CPU and CUDA backends to ensure consistency."""
+    if request.param == "cpu":
+        return CpuBackend()
+    else:
+        # Try CUDA, fall back to CPU if not available
+        try:
+            from cuverif.backend.cuda_backend import CudaBackend
+            return CudaBackend()
+        except:
+            pytest.skip("CUDA not available")
+
 
 def make_tensor(state_list, backend):
     v = np.array([V_MAP[s] for s in state_list], dtype=np.uint32)
