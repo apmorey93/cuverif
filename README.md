@@ -1,71 +1,46 @@
-# CuVerif - GPU-Accelerated Digital Logic Simulator
+# CuVerif (Internal) – DFX Accelerator
 
-## Executive Summary
+CuVerif is a GPU-accelerated helper for our DFX work: fast fault grading, scan/ATPG experiments, and JTAG/3D-stack prototypes on H100/A100.
 
-CuVerif is a **production-grade, GPU-accelerated digital logic simulator** specifically engineered for Design-for-Test (DFX) workflows in modern semiconductor development. By leveraging NVIDIA CUDA GPUs (H100 recommended), CuVerif achieves **10,000x+ speedup** over traditional CPU-based simulators like Synopsys VCS for fault grading, ATPG pattern validation, and reset analysis.
+**Use it when:**
+- You’re doing block-level stuck-at fault grading and VCS/Tessent are too slow
+- You want “zero-time” scan-load to play with ATPG patterns
+- You’re prototyping JTAG / IEEE 1838 / fuse behavior in a sandbox
 
-**Key Innovation:** CuVerif implements a "Dual-Mode" architecture that unifies simulation and physical silicon debugging into a single workflow, eliminating the traditional tool fragmentation between pre-silicon validation and post-silicon bring-up.
+**Don’t use it for:**
+- Full-chip RTL regressions or UVM testbenches
+- SDF/timing or power signoff
+- Anything that’s already on a taped-out, signoff regression path
+
+**Status:** Actively developed, used experimentally on internal DFX blocks.  
+**Owner:** Aditya (DFX) – ping on Slack for issues/ideas.
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quickstart (Internal)
 
-### Option 1: Launch GUI Studio (Recommended)
 ```bash
-# Install GUI dependencies
-pip install customtkinter pyftdi
+# 0) Clone
+git clone https://github.com/apmorey93/cuverif.git
+cd cuverif
 
-# Launch the unified interface
-python src/gui_app.py
+# 1) Create env
+pip install -r requirements.txt
+
+# 2) Sanity check (CPU / mock)
+python smoke_test.py
+
+# 3) Run a small GPU demo
+python tools/fault_grading_demo.py --batch-size 1000000
+python tools/scan_zero_time_demo.py
 ```
 
-**What you'll see:**
-- Professional dark-mode interface
-- Dual-mode toggle: Simulation (GPU) ↔ Silicon (JTAG)
-- Real-time console logging
-- Register peek/poke dashboard
+- For full feature overview → see below (“Core Capabilities”)
+- For architecture / design → `PROJECT_SUMMARY.md`
+- For JTAG / 3D details → `JTAG_IMPLEMENTATION.md`
+## Executive Summary
 
-### Option 2: Run Verification Tests
-```bash
-# Test VCD waveform export
-python -m tests.test_vcd_export
-
-# Test parallel fault injection
-python -m tests.test_fault_injection
-
-# Test Verilog compiler
-python -m tests.test_compiler
-
-# Test scan chain loading
-python -m tests.test_scan_chain
-
-# Test JTAG 3D stack
-python -m tests.test_jtag_3d
-```
-
-### Option 3: Python API Usage
-```python
-import cuverif.core as cv
-import numpy as np
-
-# Create 1 million parallel simulation instances
-BATCH_SIZE = 1_000_000
-
-# Initialize signals with 4-state logic (0, 1, X, Z)
-clk = cv.LogicTensor(
-    data_v=np.ones(BATCH_SIZE, dtype=np.uint32),   # Value = 1
-    data_s=np.ones(BATCH_SIZE, dtype=np.uint32)    # Strength = Valid
-)
-
-data = cv.randint(0, 2, BATCH_SIZE)  # Random 0/1 values
-
-# Perform GPU-accelerated logic operations
-result = clk ^ data  # XOR operation on GPU
-
-# Retrieve results to CPU
-values, strengths = result.cpu()
-print(f"Simulated {BATCH_SIZE:,} instances in parallel")
-```
+CuVerif is a **production-grade, GPU-accelerated digital logic simulator** specifically engineered for Design-for-Test (DFX) workflows. By leveraging NVIDIA CUDA GPUs, it achieves **10,000x+ speedup** over traditional CPU-based simulators.
 
 ---
 

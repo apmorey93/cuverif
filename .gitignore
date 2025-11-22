@@ -57,3 +57,5 @@ venv.bak/
 # CuVerif specific
 *.vcd
 generated_model.py
+parser.out
+parsetab.py

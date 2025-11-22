@@ -40,10 +40,10 @@ def verify_state(tensor, expected_v, expected_s, test_name):
     s_match = np.array_equal(s_actual, expected_s)
     
     if v_match and s_match:
-        print(f"✓ {test_name} PASSED")
+        print(f"[PASS] {test_name}")
         return True
     else:
-        print(f"✗ {test_name} FAILED")
+        print(f"[FAIL] {test_name}")
         print(f"  Expected V: {expected_v}, Got: {v_actual}")
         print(f"  Expected S: {expected_s}, Got: {s_actual}")
         return False
@@ -206,7 +206,7 @@ verify_state(q_batch, expected_v, expected_s,
 print("\n" + "="*70)
 print("X-PROPAGATION VERIFICATION COMPLETE")
 print("="*70)
-print("\n✓ SUCCESS: All X-propagation scenarios verified!")
+print("\n[SUCCESS] All X-propagation scenarios verified!")
 print("\nThis simulator can now catch reset-recovery bugs that")
 print("would slip through traditional 2-state simulators.")
 print("="*70)
