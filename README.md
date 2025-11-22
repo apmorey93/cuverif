@@ -31,36 +31,6 @@ pip install -r requirements.txt
 python smoke_test.py
 
 # 3) Run a small GPU demo
-python tools/fault_grading_demo.py --batch-size 1000000
-python tools/scan_zero_time_demo.py
-```
-
-- For full feature overview → see below (“Core Capabilities”)
-- For architecture / design → `PROJECT_SUMMARY.md`
-- For JTAG / 3D details → `JTAG_IMPLEMENTATION.md`
-## Executive Summary
-
-CuVerif is a **production-grade, GPU-accelerated digital logic simulator** specifically engineered for Design-for-Test (DFX) workflows. By leveraging NVIDIA CUDA GPUs, it achieves **10,000x+ speedup** over traditional CPU-based simulators.
-
----
-
-## 🎯 Core Capabilities
-
-### 1. GPU Simulation Engine
-
-#### 4-State Logic (IEEE 1164 Compliant)
-
-CuVerif implements full 4-state logic using a novel **Dual-Array Encoding** scheme:
-
-**Value States:**
-- **`0` (Logic Low):** `V=0, S=1`
-- **`1` (Logic High):** `V=1, S=1`
-- **`X` (Unknown):** `V=0, S=0` (uninitialized registers, bus contention)
-- **`Z` (High-Impedance):** `V=1, S=0` (tri-state buffers)
-
-**Implementation:**
-```python
-# Each LogicTensor has two GPU arrays:
 class LogicTensor:
     v_data: cuda.devicearray  # Value bits
     s_data: cuda.devicearray  # Strength bits (1=valid, 0=weak)
@@ -315,26 +285,6 @@ class SimpleCPU:
 ```
 
 **Supported Gates:**
-- Combinational: `and`, `or`, `xor`, `nand`, `nor`, `not`
-- Sequential: `dff` (D Flip-Flop)
-
-**Parser:** Regex-based (no external dependencies like Icarus Verilog)
-
-### 4. JTAG & 3D Stack Support
-
-#### IEEE 1149.1 - TAP Controller
-```python
-from cuverif.jtag import TAPController
-
-tap = TAPController(batch_size=1000)
-
-# Step through JTAG state machine
-for cycle in range(5):
-    tms = cv.ones(1000)  # Drive TMS=1
-    tap.step(tms)
-    
-print(f"Final State: {tap.state.cpu()[0][0]}")  # TEST_LOGIC_RESET
-```
 
 **States Implemented:**
 - TEST_LOGIC_RESET, RUN_TEST_IDLE
