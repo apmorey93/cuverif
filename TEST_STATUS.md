@@ -14,7 +14,11 @@
 
 **Backends Tested**:
 - ✅ CPU: All passing
-- ⏸️ CUDA: Skipped (no GPU in test environment)
+- ⚠️ **CUDA: NOT VALIDATED** - Tests skipped (no GPU in CI environment)
+
+**CRITICAL GAP**: CUDA kernel fixes are implemented but **unverified on actual hardware**. Until someone runs `pytest tests/test_logic_truth_tables.py` on a real GPU and shows all CUDA tests passing, the correctness fix is unproven.
+
+See `GPU_VALIDATION_CHECKLIST.md` for validation procedure.
 
 **Critical Fixes** (2025-11-21):
 - Fixed CUDA `k_and_4state`: now correctly handles `0 & X = 0` (was producing X)
