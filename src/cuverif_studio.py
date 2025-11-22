@@ -34,9 +34,7 @@ class CuVerifStudio(ctk.CTk):
     """Modern GUI for CuVerif with tabs, menus, and professional styling."""
     
     def __init__(self):
-        super
-
-().__init__()
+        super().__init__()
         
         self.title("CuVerif Studio - GPU Fault Simulator")
         self.geometry("1200x800")
