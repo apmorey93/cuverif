@@ -92,12 +92,12 @@ def main(cuverif_path, vcs_path, signals=None):
     # Report
     if num_mismatches == 0:
         print("=" * 70)
-        print("✅ SUCCESS: 0 mismatches found")
+        print("[SUCCESS] 0 mismatches found")
         print("=" * 70)
         return 0
     else:
         print("=" * 70)
-        print(f"❌ FAILURE: {num_mismatches} mismatches found")
+        print(f"[FAILURE] {num_mismatches} mismatches found")
         print("=" * 70)
         print()
         
