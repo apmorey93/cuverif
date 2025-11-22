@@ -268,13 +268,13 @@ class Chip:
             
             if rst_val is not None:
                 # Rst Active (1)
-                rst_active = (rst_val.val == 1) & (rst_val.x == 1)
+                rst_active = (rst_val.val == 1) & (rst_val.strength == 1)
                 # Rst Unknown (X)
-                rst_unknown = (rst_val.x == 0)
+                rst_unknown = (rst_val.strength == 0)
                 
                 # Base is D
                 next_v = d_val.val.copy()
-                next_s = d_val.x.copy()
+                next_s = d_val.strength.copy()
                 
                 # Apply Reset
                 # If Active -> 0 (V=0, S=1)

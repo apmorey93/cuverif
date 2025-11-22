@@ -54,14 +54,14 @@ def run_vcd_test():
     print("Simulating 10 cycles with mixed states...")
     
     # Cycle 0-2: Reset Active
-    reset_active = cv.LogicTensor(data_v=np.ones(BATCH_SIZE), data_s=np.ones(BATCH_SIZE))
+    reset_active = cv.LogicTensor.from_host(data_v=np.ones(BATCH_SIZE), data_s=np.ones(BATCH_SIZE))
     for _ in range(3):
         scope.sample()
         dff.step(data, reset_active)
         
     # Cycle 3-5: Normal Operation (Data=1)
     reset_inactive = cv.zeros(BATCH_SIZE)
-    data_high = cv.LogicTensor(data_v=np.ones(BATCH_SIZE), data_s=np.ones(BATCH_SIZE))
+    data_high = cv.LogicTensor.from_host(data_v=np.ones(BATCH_SIZE), data_s=np.ones(BATCH_SIZE))
     for _ in range(3):
         scope.sample()
         dff.step(data_high, reset_inactive)

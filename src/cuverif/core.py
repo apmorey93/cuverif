@@ -23,48 +23,65 @@ class LogicTensor:
 
     def __init__(
         self,
-        batch_size: int = 0, # Default to 0 if not provided, though usually required
+        batch_size: int | None = None,
+        *,
         backend: Backend | None = None,
         v_data: Any | None = None,
         s_data: Any | None = None,
-        # Legacy/Helper args for backward compat or ease of use
-        data_v=None, data_s=None, shape=None, gpu_ref_v=None, gpu_ref_s=None
     ):
         self.backend = backend or DEFAULT_BACKEND
         
-        # Handle legacy/helper constructors
-        if gpu_ref_v is not None:
-            self.v_data = gpu_ref_v
-            self.s_data = gpu_ref_s
-            self.batch_size = gpu_ref_v.size # Assuming size attr exists
-        elif shape is not None:
-            self.batch_size = shape
-            self.v_data, self.s_data = self.backend.alloc_logic(shape)
-            # Init to 0
-            # Note: alloc_logic might return uninitialized memory depending on backend
-            # For safety in this constructor we should init, but for perf we might not want to.
-            # The original code did zeros/ones init.
-            # Let's assume alloc gives us usable memory, but we need to set values.
-            # CPU backend gives zeros. CUDA gives uninitialized.
-            # We'll manually set to 0 state (V=0, S=1)
-            # This is inefficient if we overwrite immediately, but safe.
-            # TODO: Optimize init
-            # For now, let's trust the factory methods (zeros/ones) are preferred.
-            pass 
-        elif data_v is not None and data_s is not None:
-            data_v = np.array(data_v, dtype=np.uint32)
-            data_s = np.array(data_s, dtype=np.uint32)
-            self.batch_size = data_v.size
-            self.v_data = self.backend.get_device_array(data_v)
-            self.s_data = self.backend.get_device_array(data_s)
-        else:
-            # Direct init (preferred internal path)
-            self.batch_size = batch_size
-            if v_data is None or s_data is None:
-                 if batch_size > 0:
-                    v_data, s_data = self.backend.alloc_logic(batch_size)
+        # Case 1: Wrap existing device buffers (Internal/Advanced)
+        if v_data is not None and s_data is not None:
             self.v_data = v_data
             self.s_data = s_data
+            if batch_size is None:
+                # Try to infer, but prefer explicit
+                if hasattr(v_data, "size"):
+                    self.batch_size = v_data.size
+                else:
+                    raise ValueError("batch_size must be provided when using raw device buffers")
+            else:
+                self.batch_size = int(batch_size)
+                
+        # Case 2: Allocate new buffers
+        elif batch_size is not None:
+            self.batch_size = int(batch_size)
+            self.v_data, self.s_data = self.backend.alloc_logic(self.batch_size)
+            
+        else:
+            raise ValueError("Must provide batch_size or (v_data, s_data)")
+
+        # Invariants
+        if self.v_data is None or self.s_data is None:
+            raise RuntimeError("LogicTensor constructed without device buffers")
+        if self.batch_size <= 0:
+            raise RuntimeError(f"Invalid batch_size={self.batch_size}")
+
+    @classmethod
+    def from_host(cls, data_v, data_s, backend: Backend | None = None) -> "LogicTensor":
+        """Creates a LogicTensor from host numpy arrays."""
+        backend = backend or DEFAULT_BACKEND
+        data_v = np.asarray(data_v, dtype=np.uint32)
+        data_s = np.asarray(data_s, dtype=np.uint32)
+        
+        if data_v.shape != data_s.shape:
+            raise ValueError("data_v and data_s must have the same shape")
+            
+        batch_size = int(data_v.size)
+        
+        # Allocate device buffers
+        t = cls(batch_size=batch_size, backend=backend)
+        
+        # Copy host data to device via backend
+        backend.copy_from_host(t._buffers(), data_v, data_s)
+            
+        return t
+
+    @classmethod
+    def from_device(cls, v_data, s_data, batch_size: int, backend: Backend | None = None) -> "LogicTensor":
+        """Wraps existing device buffers into a LogicTensor."""
+        return cls(batch_size=batch_size, backend=backend, v_data=v_data, s_data=s_data)
 
     # ---- helpers ----
 
@@ -72,6 +89,13 @@ class LogicTensor:
         return LogicBuffers(self.v_data, self.s_data)
 
     def _ensure_compatible(self, other: "LogicTensor"):
+        """
+        Verify that two tensors can participate in the same operation.
+        
+        Backends are treated as singleton identity objects - we use `is` to check
+        that both tensors use the same backend instance. This enforces that all
+        operations use a consistent compute context.
+        """
         if self.backend is not other.backend:
             raise ValueError(f"Backend mismatch: {self.backend} vs {other.backend}")
         if self.batch_size != other.batch_size:
@@ -81,7 +105,7 @@ class LogicTensor:
     @property
     def val(self): return self.v_data
     @property
-    def x(self): return self.s_data
+    def strength(self): return self.s_data
     @property
     def size(self): return self.batch_size
 
@@ -89,43 +113,37 @@ class LogicTensor:
 
     @classmethod
     def zeros(cls, batch_size, backend: Backend | None = None) -> "LogicTensor":
-        t = cls(batch_size, backend=backend)
-        # 0: V=0, S=1. Need backend-specific fill or copy.
-        # For now, we'll use a slow but safe host-to-device copy for initialization
-        # to avoid adding fill() to backend interface yet.
-        # TODO: Add fill() to backend
-        v = np.zeros(batch_size, dtype=np.uint32)
-        s = np.ones(batch_size, dtype=np.uint32)
-        t.v_data = t.backend.get_device_array(v)
-        t.s_data = t.backend.get_device_array(s)
-        return t
+        # 0: V=0, S=1
+        host_v = np.zeros(batch_size, dtype=np.uint32)
+        host_s = np.ones(batch_size, dtype=np.uint32)
+        return cls.from_host(host_v, host_s, backend=backend)
 
     @classmethod
     def ones(cls, batch_size, backend: Backend | None = None) -> "LogicTensor":
-        t = cls(batch_size, backend=backend)
-        v = np.ones(batch_size, dtype=np.uint32)
-        s = np.ones(batch_size, dtype=np.uint32)
-        t.v_data = t.backend.get_device_array(v)
-        t.s_data = t.backend.get_device_array(s)
-        return t
+        # 1: V=1, S=1
+        host_v = np.ones(batch_size, dtype=np.uint32)
+        host_s = np.ones(batch_size, dtype=np.uint32)
+        return cls.from_host(host_v, host_s, backend=backend)
         
     @classmethod
     def randint(cls, low, high, size, backend: Backend | None = None) -> "LogicTensor":
-        t = cls(size, backend=backend)
-        v = np.random.randint(low, high, size, dtype=np.uint32)
-        s = np.ones(size, dtype=np.uint32)
-        t.v_data = t.backend.get_device_array(v)
-        t.s_data = t.backend.get_device_array(s)
-        return t
+        host_v = np.random.randint(low, high, size, dtype=np.uint32)
+        host_s = np.ones(size, dtype=np.uint32)
+        return cls.from_host(host_v, host_s, backend=backend)
         
     @classmethod
     def unknown(cls, size, backend: Backend | None = None) -> "LogicTensor":
-        t = cls(size, backend=backend)
-        v = np.zeros(size, dtype=np.uint32)
-        s = np.zeros(size, dtype=np.uint32)
-        t.v_data = t.backend.get_device_array(v)
-        t.s_data = t.backend.get_device_array(s)
-        return t
+        # X: V=0, S=0
+        host_v = np.zeros(size, dtype=np.uint32)
+        host_s = np.zeros(size, dtype=np.uint32)
+        return cls.from_host(host_v, host_s, backend=backend)
+        
+    @classmethod
+    def hiz(cls, size, backend: Backend | None = None) -> "LogicTensor":
+        # Z: V=1, S=0 (High Impedance)
+        host_v = np.ones(size, dtype=np.uint32)
+        host_s = np.zeros(size, dtype=np.uint32)
+        return cls.from_host(host_v, host_s, backend=backend)
 
     # ---- logic ops ----
 

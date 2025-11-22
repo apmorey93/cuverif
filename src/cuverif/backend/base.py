@@ -12,14 +12,35 @@ class LogicBuffers:
         self.s = s
 
 class Backend(ABC):
-    """Abstract interface for CuVerif execution backends."""
+    """
+    Abstract interface for compute backends (CPU, CUDA, etc.)
+    All LogicTensor operations delegate to a backend for actual computation.
+    
+    Backends are treated as singleton identity objects - operations between
+    tensors from different backend instances are not supported.
+    """
 
-    name: str  # "cuda" or "cpu"
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Returns the backend name (e.g., 'cpu', 'cuda')."""
+        ...
 
-    # ---- buffer management ----
     @abstractmethod
     def alloc_logic(self, batch_size: int, dtype=np.uint32) -> Tuple[Any, Any]:
         """Allocate (v_data, s_data) buffers on this backend."""
+
+    @abstractmethod
+    def copy_from_host(self, buffers: LogicBuffers, host_v, host_s) -> None:
+        """
+        Copy host numpy arrays into backend device buffers.
+        
+        Args:
+            buffers: Device buffers to write to (v, s)
+            host_v: Host numpy array (uint32) for value bits
+            host_s: Host numpy array (uint32) for strength bits
+        """
+        ...
 
     @abstractmethod
     def to_host(self, v_data: Any, s_data: Any) -> Tuple[np.ndarray, np.ndarray]:

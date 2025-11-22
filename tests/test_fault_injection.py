@@ -23,19 +23,6 @@ except ImportError:
         def get_masks(self, current_signal_name):
             import numpy as np
             en_host = np.zeros(self.batch_size, dtype=np.uint32)
-            val_host = np.zeros(self.batch_size, dtype=np.uint32)
-            for fault in self.fault_list:
-                if fault["name"] == current_signal_name:
-                    t_idx = fault["index"]
-                    en_host[t_idx] = 1
-                    val_host[t_idx] = fault["type"]
-            return cv.LogicTensor(data_v=en_host, data_s=np.ones(self.batch_size)), \
-                   cv.LogicTensor(data_v=val_host, data_s=np.ones(self.batch_size))
-
-import numpy as np
-
-def test_fault_campaign():
-    print("=" * 70)
     print("PARALLEL FAULT INJECTION CAMPAIGN")
     print("=" * 70)
     
@@ -74,7 +61,7 @@ def test_fault_campaign():
         for i in range(BATCH):
             if en_mask.val[i] == 1:
                 A.val[i] = val_mask.val[i]
-                A.x[i] = 1
+                A.strength[i] = 1
     
     # 5. Run Logic (Full Adder - Half Stage)
     # Sum = A XOR B

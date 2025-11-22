@@ -32,8 +32,8 @@ except ImportError:
                     t_idx = fault["index"]
                     en_host[t_idx] = 1
                     val_host[t_idx] = fault["type"]
-            return cv.LogicTensor(data_v=en_host, data_s=np.ones(self.batch_size)), \
-                   cv.LogicTensor(data_v=val_host, data_s=np.ones(self.batch_size))
+            return cv.LogicTensor.from_host(data_v=en_host, data_s=np.ones(self.batch_size)), \
+                   cv.LogicTensor.from_host(data_v=val_host, data_s=np.ones(self.batch_size))
 
 import numpy as np
 
@@ -89,7 +89,7 @@ def test_atpg_flow():
         for i in range(BATCH):
             if en.val[i] == 1:
                 reg_a.q.val[i] = val.val[i]
-                reg_a.q.x[i] = 1
+                reg_a.q.strength[i] = 1
     
     # 5. [Capture] Run Logic
     # Combinational Logic: B_next = NOT(Reg_A)

@@ -100,9 +100,9 @@ class FaultCampaign:
         
         # Create LogicTensors (using explicit V/S init to avoid ambiguity)
         # Enable mask: V=en_host, S=1 (always valid control signal)
-        en_tensor = core.LogicTensor(data_v=en_host, data_s=np.ones(self.batch_size, dtype=np.uint32))
+        en_tensor = core.LogicTensor.from_host(data_v=en_host, data_s=np.ones(self.batch_size, dtype=np.uint32))
         
         # Value mask: V=val_host, S=1
-        val_tensor = core.LogicTensor(data_v=val_host, data_s=np.ones(self.batch_size, dtype=np.uint32))
+        val_tensor = core.LogicTensor.from_host(data_v=val_host, data_s=np.ones(self.batch_size, dtype=np.uint32))
                 
         return en_tensor, val_tensor

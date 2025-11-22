@@ -8,25 +8,30 @@ allowing tests to run in environments without CUDA/Numba (like this one).
 import numpy as np
 
 class LogicTensor:
-    def __init__(self, data_v=None, data_s=None, shape=None):
-        if shape is not None:
-            self.v_data = np.zeros(shape, dtype=np.uint32)
-            self.s_data = np.ones(shape, dtype=np.uint32)
+    def __init__(self, batch_size=None, v_data=None, s_data=None):
+        if v_data is not None and s_data is not None:
+            self.v_data = v_data
+            self.s_data = s_data
+        elif batch_size is not None:
+            self.v_data = np.zeros(batch_size, dtype=np.uint32)
+            self.s_data = np.ones(batch_size, dtype=np.uint32)
         else:
-            self.v_data = np.array(data_v, dtype=np.uint32)
-            self.s_data = np.array(data_s, dtype=np.uint32)
+            raise ValueError("Invalid mock init")
             
-    @property
-    def val(self): return self.v_data
-    
-    @property
-    def x(self): return self.s_data
-    
-    def copy_to_host(self):
-        # In mock mode, data is already on host
-        return self.v_data
-
-    def __xor__(self, other):
+    @classmethod
+    def from_host(cls, data_v, data_s, backend=None):
+        return cls(v_data=np.array(data_v, dtype=np.uint32), 
+                   s_data=np.array(data_s, dtype=np.uint32))
+                   
+    @classmethod
+    def zeros(cls, size): return cls.from_host(np.zeros(size), np.ones(size))
+    @classmethod
+    def ones(cls, size): return cls.from_host(np.ones(size), np.ones(size))
+    @classmethod
+    def unknown(cls, size): return cls.from_host(np.zeros(size), np.zeros(size))
+    @classmethod
+    def randint(cls, low, high, size):
+        return cls.from_host(np.random.randint(low, high, size), np.ones(size))
         # Mock XOR logic
         # If either is X (S=0), output is X
         # Else output is A^B
@@ -120,7 +125,7 @@ class Monitor:
 # Mock DFlipFlop
 class DFlipFlop:
     def __init__(self, batch_size):
-        self.q = LogicTensor(shape=(batch_size,))
+        self.q = LogicTensor(batch_size=batch_size)
         
     def step(self, d, reset=None):
         # CPU implementation of 4-state logic

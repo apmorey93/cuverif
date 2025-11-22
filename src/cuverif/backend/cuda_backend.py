@@ -11,7 +11,11 @@ from .. import cuda_kernels as K
 _THREADS_PER_BLOCK = 256
 
 class CudaBackend(Backend):
-    name = "cuda"
+    """CUDA-based backend using Numba kernels for GPU acceleration."""
+
+    @property
+    def name(self) -> str:
+        return "cuda"
 
     def __init__(self, device_id: int = 0):
         try:
@@ -24,6 +28,10 @@ class CudaBackend(Backend):
         v = cuda.device_array(batch_size, dtype=dtype)
         s = cuda.device_array(batch_size, dtype=dtype)
         return v, s
+
+    def copy_from_host(self, buffers: LogicBuffers, host_v, host_s) -> None:
+        buffers.v.copy_to_device(host_v)
+        buffers.s.copy_to_device(host_s)
 
     def to_host(self, v_data, s_data):
         return v_data.copy_to_host(), s_data.copy_to_host()

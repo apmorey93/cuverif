@@ -52,7 +52,7 @@ class DebugPort:
             # But wait, we can just create it from host arrays if we want specific values
             v_host = np.full(batch_size, value, dtype=np.uint32)
             s_host = np.ones(batch_size, dtype=np.uint32)
-            val_tensor = cv.LogicTensor(data_v=v_host, data_s=s_host, backend=tensor.backend)
+            val_tensor = cv.LogicTensor.from_host(data_v=v_host, data_s=s_host, backend=tensor.backend)
         else:
             val_tensor = value
 
@@ -60,7 +60,7 @@ class DebugPort:
         if mask is None:
             # All ones (write to all instances)
             mask_host = np.ones(batch_size, dtype=np.uint32)
-            mask_t = cv.LogicTensor(data_v=mask_host, data_s=mask_host, backend=tensor.backend)
+            mask_t = cv.LogicTensor.from_host(data_v=mask_host, data_s=mask_host, backend=tensor.backend)
         else:
             mask_t = mask
 

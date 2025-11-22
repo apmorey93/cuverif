@@ -55,8 +55,8 @@ def test_dff_truth_table():
     r_v = np.array([0,1,0, 0,1,0, 0,1,0], dtype=np.uint32)
     r_s = np.array([1,1,0, 1,1,0, 1,1,0], dtype=np.uint32)
     
-    d_tensor = cv.LogicTensor(data_v=d_v, data_s=d_s)
-    r_tensor = cv.LogicTensor(data_v=r_v, data_s=r_s)
+    d_tensor = cv.LogicTensor.from_host(data_v=d_v, data_s=d_s)
+    r_tensor = cv.LogicTensor.from_host(data_v=r_v, data_s=r_s)
     
     # Step
     q = dff.step(d_tensor, reset=r_tensor)

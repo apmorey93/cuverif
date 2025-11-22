@@ -51,8 +51,8 @@ def test_simple_combinational():
     a_val = np.array([0, 0, 1, 1], dtype=np.uint32)
     b_val = np.array([0, 1, 0, 1], dtype=np.uint32)
     
-    t_a = cv.LogicTensor(data_v=a_val, data_s=np.ones(4, dtype=np.uint32))
-    t_b = cv.LogicTensor(data_v=b_val, data_s=np.ones(4, dtype=np.uint32))
+    t_a = cv.LogicTensor.from_host(data_v=a_val, data_s=np.ones(4, dtype=np.uint32))
+    t_b = cv.LogicTensor.from_host(data_v=b_val, data_s=np.ones(4, dtype=np.uint32))
     
     chip.set_input("a", t_a)
     chip.set_input("b", t_b)
@@ -82,8 +82,8 @@ def test_sequential_dff():
     chip = compiler.compile(source, batch_size)
     
     # Cycle 0: Reset=1, D=1 -> Q=0
-    t_d = cv.LogicTensor(data_v=np.array([1]), data_s=np.array([1]))
-    t_r = cv.LogicTensor(data_v=np.array([1]), data_s=np.array([1]))
+    t_d = cv.LogicTensor.from_host(data_v=np.array([1]), data_s=np.array([1]))
+    t_r = cv.LogicTensor.from_host(data_v=np.array([1]), data_s=np.array([1]))
     
     chip.set_input("d", t_d)
     chip.set_input("rst", t_r)
@@ -93,7 +93,7 @@ def test_sequential_dff():
     assert q.cpu()[0][0] == 0, "Reset failed"
     
     # Cycle 1: Reset=0, D=1 -> Q=1
-    t_r = cv.LogicTensor(data_v=np.array([0]), data_s=np.array([1]))
+    t_r = cv.LogicTensor.from_host(data_v=np.array([0]), data_s=np.array([1]))
     chip.set_input("rst", t_r)
     chip.step()
     

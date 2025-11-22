@@ -40,7 +40,7 @@ def backend():
 def make_tensor(state_list, backend):
     v = np.array([V_MAP[s] for s in state_list], dtype=np.uint32)
     s = np.array([S_MAP[s] for s in state_list], dtype=np.uint32)
-    return cv.LogicTensor(data_v=v, data_s=s, backend=backend)
+    return cv.LogicTensor.from_host(data_v=v, data_s=s, backend=backend)
 
 def decode_tensor(tensor):
     v, s = tensor.cpu()

@@ -64,7 +64,7 @@ def run_x_propagation_test():
     
     # ASSERTION 1: Q must be X now
     # We check the Strength bit (S). If S=0, it's X.
-    q_strength = dut.q.x.copy_to_host()
+    q_strength = dut.q.strength.copy_to_host()
     
     print(f"\n  Checking Q strength after reset glitch...")
     print(f"  Q Strength values: {q_strength[:3]}... (should all be 0)")
@@ -83,7 +83,7 @@ def run_x_propagation_test():
     # Reset is valid 0 again
     reset_valid = cv.zeros(BATCH_SIZE)
     # Data is valid 1
-    d_high = cv.LogicTensor(
+    d_high = cv.LogicTensor.from_host(
         data_v=np.ones(BATCH_SIZE, dtype=np.uint32),
         data_s=np.ones(BATCH_SIZE, dtype=np.uint32)
     )
@@ -94,7 +94,7 @@ def run_x_propagation_test():
 
     # ASSERTION 2: Q must be 1 now
     q_val = dut.q.val.copy_to_host()
-    q_str = dut.q.x.copy_to_host()
+    q_str = dut.q.strength.copy_to_host()
     
     print(f"\n  Checking Q recovery...")
     print(f"  Q[0]: Value={q_val[0]}, Strength={q_str[0]} (should be 1, 1)")

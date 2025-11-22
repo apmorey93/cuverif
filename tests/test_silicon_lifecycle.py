@@ -28,13 +28,13 @@ except ImportError:
             self.reg_map[address] = self.reg_map[name]
         def read(self, target):
             tensor = self.reg_map[target]["ref"]
-            return tensor.val, tensor.x
+            return tensor.val, tensor.strength
         def write(self, target, value, mask=None):
             tensor = self.reg_map[target]["ref"]
             if isinstance(value, int):
                 import numpy as np
                 tensor.val[:] = value
-                tensor.x[:] = 1
+                tensor.strength[:] = 1
     
     class Debug:
         DebugPort = DebugPort
@@ -46,10 +46,10 @@ except ImportError:
             import numpy as np
             self.num_bits = num_bits
             self.batch_size = batch_size
-            self.fuses = [cv.LogicTensor(data_v=np.zeros(batch_size, dtype=np.uint32),
+            self.fuses = [cv.LogicTensor.from_host(data_v=np.zeros(batch_size, dtype=np.uint32),
                                           data_s=np.ones(batch_size, dtype=np.uint32)) 
                           for _ in range(num_bits)]
-            self.q = [cv.LogicTensor(data_v=np.zeros(batch_size, dtype=np.uint32),
+            self.q = [cv.LogicTensor.from_host(data_v=np.zeros(batch_size, dtype=np.uint32),
                                       data_s=np.ones(batch_size, dtype=np.uint32)) 
                       for _ in range(num_bits)]
         def step(self, read_en, prog_en, addr, wdata):
@@ -70,7 +70,7 @@ except ImportError:
         def backdoor_burn(self, bit_index, mask):
             self.fuses[bit_index].val[:] = self.fuses[bit_index].val | mask.val
         def backdoor_read(self):
-            return [(f.val, f.x) for f in self.fuses]
+            return [(f.val, f.strength) for f in self.fuses]
     
     modules.FuseBank = FuseBank
 
@@ -107,7 +107,7 @@ def test_secure_boot():
     
     burn_mask_host = np.zeros(BATCH, dtype=np.uint32)
     burn_mask_host[5] = 1
-    burn_mask = cv.LogicTensor(data_v=burn_mask_host, 
+    burn_mask = cv.LogicTensor.from_host(data_v=burn_mask_host, 
                                 data_s=np.ones(BATCH, dtype=np.uint32))
     
     fuses.backdoor_burn(0, burn_mask)
@@ -122,7 +122,7 @@ def test_secure_boot():
     print("  Logic: If Fuse[0]==1 -> Set SECURE_EN=1, Else SECURE_EN=0")
     
     # Read Fuses (Enable Sense Amps)
-    read_en = cv.LogicTensor(data_v=np.ones(BATCH, dtype=np.uint32),
+    read_en = cv.LogicTensor.from_host(data_v=np.ones(BATCH, dtype=np.uint32),
                               data_s=np.ones(BATCH, dtype=np.uint32))
     prog_en = cv.zeros(BATCH)
     fuses.step(read_en, prog_en, 0, cv.zeros(BATCH))

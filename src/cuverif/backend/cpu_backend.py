@@ -5,15 +5,22 @@ import numpy as np
 from .base import Backend, LogicBuffers
 
 class CpuBackend(Backend):
-    name = "cpu"
+    """CPU-based backend using NumPy for all operations."""
+
+    @property
+    def name(self) -> str:
+        return "cpu"
 
     def alloc_logic(self, batch_size: int, dtype=np.uint32) -> Tuple[Any, Any]:
         v = np.zeros(batch_size, dtype=dtype)
         s = np.zeros(batch_size, dtype=dtype)
         return v, s
 
+    def copy_from_host(self, buffers: LogicBuffers, host_v, host_s) -> None:
+        buffers.v[:] = host_v
+        buffers.s[:] = host_s
+
     def to_host(self, v_data, s_data):
-        # already numpy, return copies to be safe
         return v_data.copy(), s_data.copy()
         
     def get_device_array(self, host_data: np.ndarray) -> Any:

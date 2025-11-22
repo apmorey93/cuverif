@@ -22,11 +22,11 @@ print("\n--- CuVerif Smoke Test ---\n")
 # Test 1: Create LogicTensors
 print("Test 1: Creating LogicTensors...")
 batch_size = 4
-A = cv.LogicTensor(
+A = cv.LogicTensor.from_host(
     data_v=np.array([1, 0, 1, 0], dtype=np.uint32),
     data_s=np.array([1, 1, 1, 1], dtype=np.uint32)
 )
-B = cv.LogicTensor(
+B = cv.LogicTensor.from_host(
     data_v=np.array([1, 1, 0, 0], dtype=np.uint32),
     data_s=np.array([1, 1, 1, 1], dtype=np.uint32)
 )
