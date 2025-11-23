@@ -29,19 +29,6 @@ OutputBaseFilename=CuVerif_Studio_Setup
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-PrivilegesRequired=lowest
-
-[Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
-
-[Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-
-[Files]
-Source: "dist\CuVerif Studio\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\CuVerif Studio\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
-Source: "QUICKSTART.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

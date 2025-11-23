@@ -335,10 +335,10 @@ class VerilogCompiler:
         mod_name = m_def.group(1)
         # Ports list is in group 2, but we rely on input/output decls
         
-        inputs = []
-        outputs = []
-        wires = []
-        instances = []
+        self.inputs = []
+        self.outputs = []
+        self.wires = []
+        self.instances = []
         
         # Parse Body
         body_start = m_def.end()
@@ -347,45 +347,31 @@ class VerilogCompiler:
         # Split by semicolons
         statements = body.split(';')
         
+        # Parse statements (Simplified)
         for stmt in statements:
             stmt = stmt.strip()
-            if not stmt or stmt == 'endmodule':
-                continue
-                
-            # Declarations
-            if stmt.startswith('input '):
-                inputs.extend(self._parse_list(stmt[6:]))
-            elif stmt.startswith('output '):
-                outputs.extend(self._parse_list(stmt[7:]))
-            elif stmt.startswith('wire '):
-                wires.extend(self._parse_list(stmt[5:]))
+            if not stmt: continue
+            
+            if stmt.startswith('input'):
+                self.inputs.extend(self._parse_list(stmt[5:]))
+            elif stmt.startswith('output'):
+                self.outputs.extend(self._parse_list(stmt[6:]))
+            elif stmt.startswith('wire'):
+                self.wires.extend(self._parse_list(stmt[4:]))
             else:
-                # Instance?
-                # type name (ports);
-                # or type (ports); (implicit name)
-                
-                # Regex for instance
-                # (\w+) \s+ (\w+)? \s* \( (.*) \)
-                match = re.match(r'(\w+)\s+(\w+)?\s*\((.*)\)', stmt)
+                # Instance: type name (ports);
+                # Regex: (\w+)\s+(\w+)\s*\((.*)\)
+                match = re.search(r'(\w+)\s+(\w+)?\s*\((.*)\)', stmt)
                 if match:
                     gtype = match.group(1)
-                    gname = match.group(2) or f"inst_{len(instances)}"
+                    name = match.group(2) or ""
                     ports_str = match.group(3)
                     ports = self._parse_list(ports_str)
-                    
-                    instances.append({
+                    self.instances.append({
                         'type': gtype,
-                        'name': gname,
+                        'name': name,
                         'ports': ports
                     })
-        
-        return Chip(mod_name, inputs, outputs, wires, instances, batch_size)
-
-    def _remove_comments(self):
-        # Remove // ...
-        self.source = re.sub(r'//.*', '', self.source)
-        # Remove /* ... */
-        self.source = re.sub(r'/\*.*?\*/', '', self.source, flags=re.DOTALL)
 
     def _parse_list(self, text):
         # "a, b, c" -> ['a', 'b', 'c']

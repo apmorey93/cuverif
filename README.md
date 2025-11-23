@@ -12,18 +12,6 @@ CuVerif is a GPU-accelerated helper for our DFX work: fast fault grading, scan/A
 - SDF/timing or power signoff
 - Anything that’s already on a taped-out, signoff regression path
 
-**Status:** Actively developed, used experimentally on internal DFX blocks.  
-**Owner:** Aditya (DFX) – ping on Slack for issues/ideas.
-
----
-
-## 🚀 Quickstart (Internal)
-
-```bash
-# 0) Clone
-git clone https://github.com/apmorey93/cuverif.git
-cd cuverif
-
 # 1) Create env
 pip install -r requirements.txt
 
